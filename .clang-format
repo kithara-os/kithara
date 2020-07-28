@@ -1,0 +1,6 @@
+ColumnLimit: 80
+CommentPragmas: ''
+TabWidth: 8
+IndentWidth: 8
+UseTab: Always
+AllowShortFunctionsOnASingleLine: None
