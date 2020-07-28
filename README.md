@@ -7,7 +7,7 @@ What is done:
 * Spinlocks
 * IDT/GDT/TSS
 
-What is yet to do:
+What is yet to be done:
 * Scheduler
 * Virtual memory management
 * Processes
