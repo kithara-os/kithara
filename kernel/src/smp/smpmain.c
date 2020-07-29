@@ -5,7 +5,6 @@
 #include <drivers/lapic.h>
 #include <smp/localstorage.h>
 #include <smp/smp.h>
-#include <spinlock.h>
 #include <utils.h>
 
 atomic_ulong cpu_count = 0;

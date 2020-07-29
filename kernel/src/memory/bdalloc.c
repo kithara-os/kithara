@@ -3,7 +3,7 @@
 #include <memory/initalloc.h>
 #include <memory/rammap.h>
 #include <memory/tmpphys.h>
-#include <spinlock.h>
+#include <lock.h>
 
 struct bdalloc_header {
 	struct bdalloc_header *next;
@@ -13,7 +13,7 @@ struct bdalloc_header {
 PRIVATE uint64_t bdalloc_phys_mem_order;
 PRIVATE uint64_t *bdalloc_bitmaps[64];
 PRIVATE struct bdalloc_header *bdalloc_lists[64];
-PRIVATE spinlock_t bdalloc_spinlock = 0;
+PRIVATE struct ticketlock bdalloc_lock = TICKETLOCK_INIT_STATE;
 
 inline static struct bdalloc_header *bdalloc_from_phys(uint64_t addr) {
 	return (struct bdalloc_header *)(addr + KERNEL_MAPPING_BASE);
@@ -190,15 +190,14 @@ void bdalloc_init(void) {
 }
 
 void *bdalloc_new(uint64_t size) {
-	spinlock_lock(&bdalloc_spinlock);
 	if (size < 16) {
 		size = 16;
 	}
 	uint64_t order = log2(size);
 	if (order >= (bdalloc_phys_mem_order - 1)) {
-		spinlock_unlock(&bdalloc_spinlock);
 		return NULL;
 	}
+	ticketlock_lock(&bdalloc_lock);
 	for (uint64_t cur_order = order; cur_order < bdalloc_phys_mem_order;
 	     ++cur_order) {
 		struct bdalloc_header *header = bdalloc_get_order(cur_order);
@@ -214,10 +213,10 @@ void *bdalloc_new(uint64_t size) {
 		}
 		bdalloc_clear_bit(bdalloc_to_phys(header), order + 1);
 		// bdalloc_traverse();
-		spinlock_unlock(&bdalloc_spinlock);
+		ticketlock_unlock(&bdalloc_lock);
 		return (void *)header;
 	}
-	spinlock_unlock(&bdalloc_spinlock);
+	ticketlock_unlock(&bdalloc_lock);
 	return NULL;
 }
 
@@ -225,7 +224,7 @@ void bdalloc_free(void *loc, uint64_t size) {
 	if (loc == NULL) {
 		return;
 	}
-	spinlock_lock(&bdalloc_spinlock);
+	ticketlock_lock(&bdalloc_lock);
 	assert((uint64_t)loc > KERNEL_MAPPING_BASE,
 	       "[bdalloc] area free under KERNEL_MAPPING_BASE\n");
 	if (size < 16) {
@@ -237,11 +236,11 @@ void bdalloc_free(void *loc, uint64_t size) {
 		struct bdalloc_header *tmp;
 		if ((tmp = bdalloc_try_to_merge(head, i)) == NULL) {
 			bdalloc_insert_order(head, i);
-			spinlock_unlock(&bdalloc_spinlock);
+			ticketlock_unlock(&bdalloc_lock);
 			return;
 		}
 		head = tmp;
 	}
 	bdalloc_insert_order(head, bdalloc_phys_mem_order);
-	spinlock_unlock(&bdalloc_spinlock);
+	ticketlock_unlock(&bdalloc_lock);
 }
