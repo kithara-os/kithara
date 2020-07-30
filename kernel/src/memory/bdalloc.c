@@ -204,14 +204,13 @@ void *bdalloc_new(uint64_t size) {
 		if (header == NULL) {
 			continue;
 		}
-
 		bdalloc_clear_bit(bdalloc_to_phys(header) &
 				      ~(1ULL << (cur_order)),
 				  cur_order + 1);
 		for (uint64_t i = cur_order; i > order; --i) {
 			bdalloc_split(header, i);
 		}
-		bdalloc_clear_bit(bdalloc_to_phys(header), order + 1);
+		bdalloc_clear_bit(bdalloc_to_phys(header), order);
 		// bdalloc_traverse();
 		ticketlock_unlock(&bdalloc_lock);
 		return (void *)header;

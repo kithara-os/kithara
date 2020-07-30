@@ -10,7 +10,6 @@ void apic_timer_handler(struct frame *frame) {
 	if (storage->apictimer_handler != NULL) {
 		storage->apictimer_handler(frame);
 	}
-	printf("Tick\n");
 	lapic_write(LAPIC_REG_EOI, 0);
 }
 

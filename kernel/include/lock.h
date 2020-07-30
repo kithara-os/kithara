@@ -19,7 +19,6 @@ inline static void ticketlock_lock(struct ticketlock *lock) {
 
 }
 inline static void ticketlock_unlock(struct ticketlock *lock) {
-	asm volatile("mfence" ::: "memory");
 	atomic_fetch_add(&(lock->cur_ticket), 1);
 }
 

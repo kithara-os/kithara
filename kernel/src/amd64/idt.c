@@ -42,7 +42,6 @@ void idt_init(void) {
 	idt->pointer.limit = 0x1000;
 	idt_load(&(idt->pointer));
 	local_storage_get()->idt = idt;
-	asm volatile("mfence" ::: "memory");
 	for (uint64_t i = 0; i < 256; ++i) {
 		idt_set_gate(i, (uint64_t)idt_handler, 0, false);
 	}
