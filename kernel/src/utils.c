@@ -1,5 +1,5 @@
 #include <amd64/ports.h>
-#include <spinlock.h>
+#include <lock.h>
 #include <utils.h>
 #include <video/video.h>
 
@@ -50,9 +50,10 @@ void putp(uint64_t pointer, int depth) {
 	video_putc(char_from_digit(pointer % 16));
 }
 
+static struct ticketlock printf_lock = TICKETLOCK_INIT_STATE;
+
 void printf(const char *fmt, ...) {
-	static spinlock_t spinlock = 0;
-	spinlock_lock(&spinlock);
+	ticketlock_lock(&printf_lock);
 	va_list args;
 	va_start(args, fmt);
 	for (uint64_t i = 0; fmt[i] != '\0'; ++i) {
@@ -111,7 +112,7 @@ void printf(const char *fmt, ...) {
 			}
 		}
 	}
-	spinlock_unlock(&spinlock);
+	ticketlock_unlock(&printf_lock);
 	va_end(args);
 }
 

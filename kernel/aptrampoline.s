@@ -7,8 +7,6 @@ start:
 	jmp 0x0000:.start16
 .start16:
 	cli
-	mov word [0x7ffe], 0xffff
-	mfence
 
 	xor ax, ax
 	mov ss, ax

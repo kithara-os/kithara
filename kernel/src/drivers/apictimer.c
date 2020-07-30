@@ -3,26 +3,25 @@
 #include <drivers/lapic.h>
 #include <drivers/pit.h>
 #include <smp/localstorage.h>
-#include <spinlock.h>
+#include <lock.h>
 
 void apic_timer_handler(struct frame *frame) {
 	struct local_storage *storage = local_storage_get();
 	if (storage->apictimer_handler != NULL) {
 		storage->apictimer_handler(frame);
 	}
-	printf("Tick\n");
 	lapic_write(LAPIC_REG_EOI, 0);
 }
 
 void apic_timer_init(uint64_t ms) {
-	static spinlock_t pit_spinlock = 0;
+	static struct ticketlock pit_lock = TICKETLOCK_INIT_STATE;
 
 	extern void apic_timer_isr(void);
 	idt_set_gate(32, (uint64_t)apic_timer_isr, 0, false);
 
 	local_storage_get()->apictimer_handler = NULL;
 
-	spinlock_lock(&pit_spinlock);
+	ticketlock_lock(&pit_lock);
 
 	lapic_write(LAPIC_REG_TMRDIV, 0x3);
 	lapic_write(LAPIC_REG_TMRINITCNT, 0xFFFFFFFF);
@@ -35,5 +34,5 @@ void apic_timer_init(uint64_t ms) {
 	lapic_write(LAPIC_REG_TMRDIV, 0x3);
 	lapic_write(LAPIC_REG_TMRINITCNT, ticks);
 
-	spinlock_unlock(&pit_spinlock);
+	ticketlock_unlock(&pit_lock);
 }

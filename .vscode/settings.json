@@ -11,6 +11,7 @@
 		"limits": "c",
 		"ostream": "c",
 		"sstream": "c",
-		"streambuf": "c"
+		"streambuf": "c",
+		"fstream": "c"
 	}
 }
